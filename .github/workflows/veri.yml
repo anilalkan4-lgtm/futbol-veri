@@ -1,0 +1,44 @@
+name: football-data aynası
+on:
+  schedule:
+    - cron: "17 3,11,19 * * *"   # günde 3 kez (UTC)
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  ayna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dosyaları indir
+        run: |
+          python3 - <<'PY'
+          import datetime, pathlib, urllib.request
+          out = pathlib.Path("veri"); out.mkdir(exist_ok=True)
+          t = datetime.date.today()
+          y = t.year % 100 if t.month >= 7 else (t.year - 1) % 100
+          seasons = [f"{(y-k)%100:02d}{(y-k+1)%100:02d}" for k in range(5)]
+          divs = ["T1", "E0", "E1", "D1", "D2"]
+          def get(url, dest):
+              try:
+                  req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                  body = urllib.request.urlopen(req, timeout=60).read()
+                  if len(body) > 50 and b"<html" not in body[:500].lower():
+                      dest.write_bytes(body); print("ok  ", dest.name)
+                  else: print("bos ", dest.name)
+              except Exception as e: print("hata", dest.name, e)
+          for s in seasons:
+              for d in divs:
+                  dest = out / f"{s}_{d}.csv"
+                  if s != seasons[0] and dest.exists():  # biten sezonlar bir kez
+                      continue
+                  get(f"https://www.football-data.co.uk/mmz4281/{s}/{d}.csv", dest)
+          get("https://www.football-data.co.uk/fixtures.csv", out / "fixtures.csv")
+          PY
+      - name: Kaydet
+        run: |
+          git config user.name "ayna-bot"
+          git config user.email "ayna-bot@users.noreply.github.com"
+          git add veri
+          git diff --cached --quiet || git commit -m "veri güncellemesi $(date -u +%F_%H%M)"
+          git push
