@@ -18,7 +18,7 @@ jobs:
           t = datetime.date.today()
           y = t.year % 100 if t.month >= 7 else (t.year - 1) % 100
           seasons = [f"{(y-k)%100:02d}{(y-k+1)%100:02d}" for k in range(5)]
-          divs = ["T1", "E0", "E1", "D1", "D2"]
+          divs = ["E0", "E1", "E2", "E3", "EC", "SC0", "SC1", "SC2", "SC3", "D1", "D2", "I1", "I2", "SP1", "SP2", "F1", "F2", "N1", "B1", "P1", "T1", "G1"]
           def get(url, dest):
               try:
                   req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
